@@ -1,0 +1,2 @@
+# Sparkathon
+Hackathon management system
