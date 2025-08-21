@@ -38,3 +38,8 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: -1ms
+
+application:
+  jwt:
+    access-expire-time-sec: 18000 # 5 hours
+    refresh-expire-time-sec: 86400 # 1 day

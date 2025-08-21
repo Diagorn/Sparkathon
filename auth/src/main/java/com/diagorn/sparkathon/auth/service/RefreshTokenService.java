@@ -24,7 +24,7 @@ import static com.diagorn.sparkathon.auth.utils.JsonUtils.toJson;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TokenService {
+public class RefreshTokenService {
     private static final String KEY_PREFIX = "refresh_token:";
     private final StringRedisTemplate redisTemplate;
 
@@ -87,7 +87,7 @@ public class TokenService {
         var keysPattern = String.format("%s*", KEY_PREFIX);
         var keys = redisTemplate.opsForValue().getOperations().keys(keysPattern);
         if (CollectionUtils.isEmpty(keys)) {
-            return;
+            throw new IllegalStateException("User is already logged out");
         }
 
         keys.forEach(key -> {

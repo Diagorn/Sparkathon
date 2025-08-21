@@ -1,5 +1,8 @@
 package com.diagorn.sparkathon.auth.domain;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
@@ -11,21 +14,23 @@ import java.time.LocalDateTime;
  * @author mikhail.gasin
  */
 @MappedSuperclass
+@Getter
+@Setter
 public abstract class AbstractEntity {
     /**
      * Identifier
      */
     @Id
     @Column(name = "id")
-    private Long id;
+    protected Long id;
     /**
      * Date of creation
      */
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    protected LocalDateTime createdAt;
     /**
      * Date of last modification
      */
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    protected LocalDateTime updatedAt;
 }
