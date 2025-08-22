@@ -43,3 +43,7 @@ application:
   jwt:
     access-expire-time-sec: 18000 # 5 hours
     refresh-expire-time-sec: 86400 # 1 day
+    secret: f4dea871a7569cba13a3f56f0b4ea9a3
+
+server:
+  port: 8081

@@ -1,3 +1,16 @@
 spring:
   application:
     name: gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/auth-service/**
+          filters:
+            - StripPrefix=1
+
+jwt:
+  secret: f4dea871a7569cba13a3f56f0b4ea9a3

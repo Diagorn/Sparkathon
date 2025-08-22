@@ -3,14 +3,14 @@ package com.diagorn.sparkathon.auth.service;
 import com.diagorn.sparkathon.auth.config.properties.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,8 +26,6 @@ import java.util.function.Function;
 @Slf4j
 public class JwtService {
 
-    private final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-
     private final JwtProperties jwtProperties;
 
     /**
@@ -37,8 +35,9 @@ public class JwtService {
      * @return access token
      */
     public String generateAccessToken(UserDetails userDetails) {
+        var role = getRole(userDetails);
         Map<String, Object> claims = new HashMap<>();
-        return doGenerateToken(claims, userDetails.getUsername(), jwtProperties.getAccessExpireTimeSec());
+        return doGenerateToken(claims, userDetails.getUsername(), getRole(userDetails), jwtProperties.getAccessExpireTimeSec());
     }
 
     /**
@@ -49,7 +48,7 @@ public class JwtService {
      */
     public String generateRefreshToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        return doGenerateToken(claims, userDetails.getUsername(), jwtProperties.getRefreshExpireTimeSec());
+        return doGenerateToken(claims, userDetails.getUsername(), getRole(userDetails), jwtProperties.getRefreshExpireTimeSec());
     }
 
     /**
@@ -96,19 +95,27 @@ public class JwtService {
 
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
+                .setSigningKey(Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8)))
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
-    private String doGenerateToken(Map<String, Object> claims, String subject, long expireSec) {
+    private String doGenerateToken(Map<String, Object> claims, String subject, String role, long expireSec) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
+                .claim("role", role)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expireSec * 1_00))
-                .signWith(SECRET_KEY)
+                .setExpiration(new Date(System.currentTimeMillis() + expireSec * 1_000))
+                .signWith(Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8)))
                 .compact();
+    }
+
+    private String getRole(UserDetails userDetails) {
+        return userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse(null);
     }
 }

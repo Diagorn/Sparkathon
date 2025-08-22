@@ -21,4 +21,6 @@ public class JwtProperties {
      * Refresh token expire time, seconds
      */
     private Integer refreshExpireTimeSec;
+
+    private String secret;
 }
