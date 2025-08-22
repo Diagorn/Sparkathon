@@ -2,6 +2,7 @@ package com.diagorn.sparkathon.auth.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.codehaus.plexus.util.StringUtils;
 
 /**
@@ -11,7 +12,12 @@ import org.codehaus.plexus.util.StringUtils;
  */
 public class JsonUtils {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper;
+
+    static {
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+    }
 
     private JsonUtils() {
     }

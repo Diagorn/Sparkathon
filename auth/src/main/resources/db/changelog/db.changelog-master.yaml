@@ -3,3 +3,9 @@ databaseChangeLog:
       file: db/changelog/001-initial-schema.sql
   - include:
       file: db/changelog/002-add-indexes.sql
+  - include:
+      file: db/changelog/003-create-sequences.sql
+  - include:
+      file: db/changelog/004-add-role-creation-permission.sql
+  - include:
+      file: db/changelog/005-add-telegram-nickname.sql

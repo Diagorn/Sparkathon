@@ -1,12 +1,21 @@
 package com.diagorn.sparkathon.auth.service;
 
+import com.diagorn.sparkathon.auth.domain.User;
+import com.diagorn.sparkathon.auth.dto.user.UserDTO;
+import com.diagorn.sparkathon.auth.dto.user.UserRegistrationRequest;
+import com.diagorn.sparkathon.auth.exception.BadRequestException;
+import com.diagorn.sparkathon.auth.exception.NotFoundException;
+import com.diagorn.sparkathon.auth.mapper.UserMapper;
 import com.diagorn.sparkathon.auth.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.Optional;
 
 /**
@@ -18,10 +27,15 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
 
+    private final RoleService roleService;
+
+    private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * Load user by login
+     *
      * @param login - login
      * @return user
      * @throws UsernameNotFoundException if such login is absent in db
@@ -32,5 +46,70 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         String.format("User by login %s not found", login)
                 ));
+    }
+
+    /**
+     * Save a new user
+     * @param request - new user request
+     * @return new user
+     */
+    @Transactional
+    public UserDTO saveNewUser(UserRegistrationRequest request) {
+        User user = User.builder()
+                .role(roleService.getById(request.getRoleId()))
+                .login(request.getLogin())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .email(request.getEmail())
+                .telegramNickname(request.getTelegramNickname())
+                .build();
+
+        try {
+            user = userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException("Could not save new user: person with such login or email already exists");
+        }
+
+        // TODO send email and telegram nickname to notification
+
+        return userMapper.toDTO(user);
+    }
+
+    /**
+     * Update a user
+     * @param userDTO - updated user fields
+     * @return
+     */
+    @Transactional
+    public UserDTO updateUser(UserDTO userDTO) {
+        User dbUser = get(userDTO.getId());
+        User user = userMapper.toEntity(userDTO);
+
+        user.setPassword(dbUser.getPassword());
+        user.setRole(dbUser.getRole());
+        userRepository.save(user);
+
+        // TODO send email and telegram nickname IF CHANGED
+
+        return userMapper.toDTO(user);
+    }
+
+    /**
+     * Find user by id
+     * @param id - user ID
+     * @return found user
+     */
+    public UserDTO getById(Long id) {
+        return userMapper.toDTO(get(id));
+    }
+
+    /**
+     * Get user by ID
+     * Throws NotFoundException if ID is not found in the database
+     * @param id - user ID
+     * @return found user
+     */
+    private User get(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 }

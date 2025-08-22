@@ -107,7 +107,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expireSec))
+                .setExpiration(new Date(System.currentTimeMillis() + expireSec * 1_00))
                 .signWith(SECRET_KEY)
                 .compact();
     }

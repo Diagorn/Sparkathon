@@ -1,8 +1,6 @@
 package com.diagorn.sparkathon.auth.domain;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,10 +17,21 @@ import java.util.Optional;
  */
 @Entity
 @Table(name = "usr")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Builder
 public class User extends AbstractEntity implements UserDetails {
+    /**
+     * Identifier
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "usr_id_gen")
+    @SequenceGenerator(name = "usr_id_gen", sequenceName = "usr_id_seq", allocationSize = 1)
+    @Column(name = "id")
+    protected Long id;
     /**
      * User role
      */
@@ -59,6 +68,11 @@ public class User extends AbstractEntity implements UserDetails {
      */
     @Column(name = "email", nullable = false, unique = true)
     private String email;
+    /**
+     * Telegram nickname
+     */
+    @Column(name = "telegram_nickname")
+    private String telegramNickname;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

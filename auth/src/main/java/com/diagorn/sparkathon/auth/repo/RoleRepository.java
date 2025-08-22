@@ -4,6 +4,8 @@ import com.diagorn.sparkathon.auth.domain.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * Repository for working with user roles
  *
@@ -18,4 +20,11 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
      * @return role
      */
     Role findByName(String name);
+
+    /**
+     * Find all roles that are allowed or not allowed for creation
+     * @param isAllowedForCreation - if roles should be allowed
+     * @return list of roles
+     */
+    List<Role> findAllByIsAllowedForCreation(Boolean isAllowedForCreation);
 }

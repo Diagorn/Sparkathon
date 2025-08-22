@@ -3,6 +3,7 @@ package com.diagorn.sparkathon.auth.service;
 import com.diagorn.sparkathon.auth.config.properties.JwtProperties;
 import com.diagorn.sparkathon.auth.domain.User;
 import com.diagorn.sparkathon.auth.dto.auth.*;
+import com.diagorn.sparkathon.auth.exception.BadRequestException;
 import com.diagorn.sparkathon.auth.exception.NotFoundException;
 import com.diagorn.sparkathon.auth.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -43,11 +43,11 @@ public class AuthenticationService {
     public LoginResponse login(LoginRequest request) {
         var user = getUser(request.getLogin());
         if (user == null) {
-            throw new IllegalArgumentException("User not found");
+            throw new NotFoundException("User not found");
         }
 
-        if (!Objects.equals(passwordEncoder.encode(request.getPassword()), user.getPassword())) {
-            throw new IllegalArgumentException("Username or password is wrong");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BadRequestException("Username or password is wrong");
         }
 
         var accessToken = jwtService.generateAccessToken(user);

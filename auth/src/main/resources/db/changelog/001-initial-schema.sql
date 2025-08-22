@@ -15,8 +15,8 @@ comment on table role is 'User roles';
 create table usr (
     id bigint primary key,
     role_id bigint not null,
-    first_name varchar not null,
-    last_name varchar not null,
+    first_name varchar,
+    last_name varchar,
     middle_name varchar,
     login varchar not null unique,
     password varchar not null,
