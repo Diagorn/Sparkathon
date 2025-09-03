@@ -2,7 +2,9 @@ package com.diagorn.sparkathon.auth.dto.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 /**
@@ -12,6 +14,8 @@ import lombok.ToString;
  */
 @Data
 @ToString
+@AllArgsConstructor
+@NoArgsConstructor
 public class LogoutRequest {
     /**
      * Last refresh token
