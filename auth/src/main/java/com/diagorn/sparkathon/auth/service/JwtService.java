@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.codehaus.plexus.util.StringUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -59,8 +60,16 @@ public class JwtService {
      * @return validity fact
      */
     public Boolean validateToken(String token, UserDetails userDetails) {
-        var username = getUsernameFromToken(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        String username;
+        try {
+            username = getUsernameFromToken(token);
+        } catch (Exception e) {
+            username = null;
+        }
+
+        return (StringUtils.isNotEmpty(username)
+                && username.equals(userDetails.getUsername())
+                && !isTokenExpired(token));
     }
 
     /**
@@ -84,8 +93,13 @@ public class JwtService {
     }
 
     private Boolean isTokenExpired(String token) {
-        final var expiration = getExpirationDateFromToken(token);
-        return expiration.before(new Date());
+        Date expiration;
+        try {
+            expiration = getExpirationDateFromToken(token);
+        } catch (Exception e) {
+            expiration = null;
+        }
+        return expiration == null || expiration.before(new Date());
     }
 
     private <T> T getClaimFromToken(String token, Function<Claims, T> claimResolver) {
