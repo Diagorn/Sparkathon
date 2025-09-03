@@ -1,6 +1,7 @@
 package com.diagorn.sparkathon.auth.dto.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 import jakarta.validation.constraints.Email;
@@ -15,6 +16,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
  * @author diagorn
  */
 @Data
+@Builder
 public class UserRegistrationRequest {
     /**
      * New user role ID
