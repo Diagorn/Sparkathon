@@ -48,7 +48,7 @@ public class RefreshTokenService {
      */
     public boolean isValid(String refreshToken) {
         return Optional.ofNullable(redisTemplate.opsForValue().get(getTokenKey(refreshToken)))
-                .map(jsonTokenInfo -> fromJson(jsonTokenInfo, RefreshToken.class).isRevoked())
+                .map(jsonTokenInfo -> !fromJson(jsonTokenInfo, RefreshToken.class).isRevoked())
                 .orElse(false);
     }
 
