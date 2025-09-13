@@ -1,4 +1,4 @@
-package com.diagorn.sparkathon.auth.dto;
+package com.diagorn.sparkathon.auth.dto.auth;
 
 import lombok.Builder;
 import lombok.Data;

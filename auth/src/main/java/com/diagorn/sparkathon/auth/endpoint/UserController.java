@@ -51,7 +51,7 @@ public class UserController {
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID")
     public ResponseEntity<UserDTO> getById(
-            @PathVariable
+            @PathVariable(name = "id")
             @Parameter(description = "User ID")
             Long id) {
         UserDTO result = userService.getById(id);
