@@ -39,6 +39,12 @@ spring:
           min-idle: 0
           max-wait: -1ms
 
+  kafka:
+    bootstrap-servers: localhost:9092
+    topics:
+      new-user: user-created
+      edit-user: user-updated
+
 application:
   jwt:
     access-expire-time-sec: 18000 # 5 hours

@@ -1,6 +1,9 @@
 package com.diagorn.sparkathon.auth.service;
 
+import com.diagorn.sparkathon.auth.client.KafkaClient;
+import com.diagorn.sparkathon.auth.config.properties.KafkaTopicProperties;
 import com.diagorn.sparkathon.auth.domain.User;
+import com.diagorn.sparkathon.auth.dto.kafka.NewUserContactsEvent;
 import com.diagorn.sparkathon.auth.dto.user.UserDTO;
 import com.diagorn.sparkathon.auth.dto.user.UserRegistrationRequest;
 import com.diagorn.sparkathon.auth.exception.BadRequestException;
@@ -16,6 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -32,7 +37,9 @@ public class UserService implements UserDetailsService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final KafkaClient kafkaClient;
 
+    private final KafkaTopicProperties kafkaTopicProperties;
     /**
      * Load user by login
      *
@@ -69,7 +76,7 @@ public class UserService implements UserDetailsService {
             throw new BadRequestException("Could not save new user: person with such login or email already exists");
         }
 
-        // TODO send email and telegram nickname to notification
+        kafkaClient.send(getUserContacts(user), kafkaTopicProperties.getNewUser());
 
         return userMapper.toDTO(user);
     }
@@ -88,7 +95,7 @@ public class UserService implements UserDetailsService {
         user.setRole(dbUser.getRole());
         userRepository.save(user);
 
-        // TODO send email and telegram nickname IF CHANGED
+        kafkaClient.send(getUserContacts(user), kafkaTopicProperties.getEditUser());
 
         return userMapper.toDTO(user);
     }
@@ -111,5 +118,14 @@ public class UserService implements UserDetailsService {
     private User get(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    private NewUserContactsEvent getUserContacts(User user) {
+        return NewUserContactsEvent.builder()
+                .id(user.getId())
+                .telegramNickname(user.getTelegramNickname())
+                .email(user.getEmail())
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 }
