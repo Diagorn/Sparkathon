@@ -1,7 +1,10 @@
 package com.diagorn.sparkathon.auth.service;
 
+import com.diagorn.sparkathon.auth.client.KafkaClient;
+import com.diagorn.sparkathon.auth.config.properties.KafkaTopicProperties;
 import com.diagorn.sparkathon.auth.domain.Role;
 import com.diagorn.sparkathon.auth.domain.User;
+import com.diagorn.sparkathon.auth.dto.kafka.NewUserContactsEvent;
 import com.diagorn.sparkathon.auth.dto.user.UserDTO;
 import com.diagorn.sparkathon.auth.dto.user.UserRegistrationRequest;
 import com.diagorn.sparkathon.auth.exception.BadRequestException;
@@ -40,6 +43,12 @@ class UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private KafkaClient kafkaClient;
+
+    @Mock
+    private KafkaTopicProperties kafkaTopicProperties;
+
     @InjectMocks
     private UserService userService;
 
@@ -50,6 +59,8 @@ class UserServiceTest {
     private static final String NON_EXISTING_LOGIN = "nonexisting";
     private static final String RAW_PASSWORD = "password123";
     private static final String ENCODED_PASSWORD = "encodedPassword123";
+    private static final String NEW_USER_TOPIC = "new-user-topic";
+    private static final String EDIT_USER_TOPIC = "edit-user-topic";
 
     @Test
     void loadUserByUsername_WithExistingLogin_ShouldReturnUserDetails() {
@@ -98,6 +109,8 @@ class UserServiceTest {
                 .willReturn(savedUser);
         given(userMapper.toDTO(savedUser))
                 .willReturn(expectedDTO);
+        given(kafkaTopicProperties.getNewUser())
+                .willReturn(NEW_USER_TOPIC);
 
         // When
         UserDTO result = userService.saveNewUser(request);
@@ -109,6 +122,7 @@ class UserServiceTest {
         verify(passwordEncoder).encode(RAW_PASSWORD);
         verify(userRepository).saveAndFlush(any(User.class));
         verify(userMapper).toDTO(savedUser);
+        verify(kafkaClient).send(any(NewUserContactsEvent.class), eq(NEW_USER_TOPIC));
     }
 
     @Test
@@ -151,6 +165,8 @@ class UserServiceTest {
                 .willReturn(updatedUser);
         given(userMapper.toDTO(updatedUser))
                 .willReturn(expectedDTO);
+        given(kafkaTopicProperties.getEditUser())
+                .willReturn(EDIT_USER_TOPIC);
 
         // When
         UserDTO result = userService.updateUser(requestDTO);
@@ -163,6 +179,7 @@ class UserServiceTest {
         verify(userMapper).toEntity(requestDTO);
         verify(userRepository).save(updatedUser);
         verify(userMapper).toDTO(updatedUser);
+        verify(kafkaClient).send(any(NewUserContactsEvent.class), eq(EDIT_USER_TOPIC));
     }
 
     @Test
@@ -182,6 +199,7 @@ class UserServiceTest {
         verify(userRepository).findById(NON_EXISTING_USER_ID);
         verify(userMapper, never()).toEntity(any());
         verify(userRepository, never()).save(any());
+        verify(kafkaClient, never()).send(any(), any());
     }
 
     @Test
