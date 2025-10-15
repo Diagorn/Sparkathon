@@ -9,8 +9,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/auth?currentSchema=auth
-    username: root
-    password: root
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -43,7 +43,9 @@ spring:
     bootstrap-servers: localhost:9092
     topics:
       new-user: user-created
+      new-user-partition-num: 4
       edit-user: user-updated
+      edit-user-partition-num: 4
 
 application:
   jwt:

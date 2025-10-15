@@ -76,7 +76,7 @@ public class UserService implements UserDetailsService {
             throw new BadRequestException("Could not save new user: person with such login or email already exists");
         }
 
-        kafkaClient.send(getUserContacts(user), kafkaTopicProperties.getNewUser());
+        kafkaClient.sendUserContacts(getUserContacts(user), kafkaTopicProperties.getNewUser());
 
         return userMapper.toDTO(user);
     }
@@ -95,7 +95,7 @@ public class UserService implements UserDetailsService {
         user.setRole(dbUser.getRole());
         userRepository.save(user);
 
-        kafkaClient.send(getUserContacts(user), kafkaTopicProperties.getEditUser());
+        kafkaClient.sendUserContacts(getUserContacts(user), kafkaTopicProperties.getEditUser());
 
         return userMapper.toDTO(user);
     }

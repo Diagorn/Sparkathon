@@ -122,7 +122,7 @@ class UserServiceTest {
         verify(passwordEncoder).encode(RAW_PASSWORD);
         verify(userRepository).saveAndFlush(any(User.class));
         verify(userMapper).toDTO(savedUser);
-        verify(kafkaClient).send(any(NewUserContactsEvent.class), eq(NEW_USER_TOPIC));
+        verify(kafkaClient).sendUserContacts(any(NewUserContactsEvent.class), eq(NEW_USER_TOPIC));
     }
 
     @Test
@@ -179,7 +179,7 @@ class UserServiceTest {
         verify(userMapper).toEntity(requestDTO);
         verify(userRepository).save(updatedUser);
         verify(userMapper).toDTO(updatedUser);
-        verify(kafkaClient).send(any(NewUserContactsEvent.class), eq(EDIT_USER_TOPIC));
+        verify(kafkaClient).sendUserContacts(any(NewUserContactsEvent.class), eq(EDIT_USER_TOPIC));
     }
 
     @Test
@@ -199,6 +199,7 @@ class UserServiceTest {
         verify(userRepository).findById(NON_EXISTING_USER_ID);
         verify(userMapper, never()).toEntity(any());
         verify(userRepository, never()).save(any());
+        verify(kafkaClient, never()).send(any(), any());
         verify(kafkaClient, never()).send(any(), any());
     }
 

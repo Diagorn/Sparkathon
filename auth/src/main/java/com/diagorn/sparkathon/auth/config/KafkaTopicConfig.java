@@ -8,6 +8,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
+/**
+ * Configuration of kafka topics
+ *
+ * @author diagorn
+ */
 @Configuration
 @RequiredArgsConstructor
 @EnableConfigurationProperties(KafkaTopicProperties.class)
@@ -17,11 +22,17 @@ public class KafkaTopicConfig {
 
     @Bean
     public NewTopic newUserTopic() {
-        return TopicBuilder.name(kafkaTopicProperties.getNewUser()).build();
+        return TopicBuilder
+                .name(kafkaTopicProperties.getNewUser())
+                .partitions(kafkaTopicProperties.getNewUserPartitionNum())
+                .build();
     }
 
     @Bean
     public NewTopic editUserTopic() {
-        return TopicBuilder.name(kafkaTopicProperties.getEditUser()).build();
+        return TopicBuilder
+                .name(kafkaTopicProperties.getEditUser())
+                .partitions(kafkaTopicProperties.getEditUserPartitionNum())
+                .build();
     }
 }
