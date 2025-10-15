@@ -18,19 +18,12 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class KafkaClient {
 
-    private final ObjectMapper objectMapper;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final KafkaTemplate<Long, NewUserContactsEvent> newUserContactsEventKafkaTemplate;
 
     public void send(String json, String topic) {
         checkFields(json, topic);
         kafkaTemplate.send(topic, json);
-    }
-
-    @SneakyThrows
-    public void send(Object data, String topic) {
-        checkFields(data, topic);
-        this.send(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(data), topic);
     }
 
     public void sendUserContacts(NewUserContactsEvent data, String topic) {
