@@ -144,6 +144,9 @@ public class Hackathon extends AuditableEntityWithUser {
             cascade = CascadeType.ALL
     )
     private Set<Challenge> challenges = new HashSet<>();
+    /**
+     * Events happening during hackathon
+     */
     @OneToMany(
             fetch = FetchType.LAZY,
             mappedBy = "hackathon",
