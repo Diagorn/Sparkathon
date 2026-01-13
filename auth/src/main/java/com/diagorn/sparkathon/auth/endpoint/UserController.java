@@ -3,6 +3,7 @@ package com.diagorn.sparkathon.auth.endpoint;
 import com.diagorn.sparkathon.auth.dto.user.UserDTO;
 import com.diagorn.sparkathon.auth.dto.user.UserRegistrationRequest;
 import com.diagorn.sparkathon.auth.service.UserService;
+import com.diagorn.sparkathon.common.AbstractWebErrorHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +23,7 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/v1/users")
 @Tag(name = "Users", description = "User management API")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController extends AbstractWebErrorHandler {
 
     private final UserService userService;
 

@@ -2,6 +2,7 @@ package com.diagorn.sparkathon.auth.endpoint;
 
 import com.diagorn.sparkathon.auth.dto.user.RoleDTO;
 import com.diagorn.sparkathon.auth.service.RoleService;
+import com.diagorn.sparkathon.common.AbstractWebErrorHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ import java.util.List;
 @RequestMapping("/api/v1/roles")
 @Tag(name = "Roles", description = "Roles management API")
 @RequiredArgsConstructor
-public class RoleController {
+public class RoleController extends AbstractWebErrorHandler {
 
     private final RoleService roleService;
 

@@ -2,7 +2,7 @@ package com.diagorn.sparkathon.auth.service;
 
 import com.diagorn.sparkathon.auth.domain.Role;
 import com.diagorn.sparkathon.auth.dto.user.RoleDTO;
-import com.diagorn.sparkathon.auth.exception.NotFoundException;
+import com.diagorn.sparkathon.common.exception.NotFoundException;
 import com.diagorn.sparkathon.auth.mapper.RoleMapper;
 import com.diagorn.sparkathon.auth.repo.RoleRepository;
 import org.junit.jupiter.api.Test;

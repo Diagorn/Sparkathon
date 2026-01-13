@@ -2,6 +2,7 @@ package com.diagorn.sparkathon.auth.endpoint;
 
 import com.diagorn.sparkathon.auth.dto.auth.*;
 import com.diagorn.sparkathon.auth.service.AuthenticationService;
+import com.diagorn.sparkathon.common.AbstractWebErrorHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/v1/auth/")
 @Tag(name = "Auth", description = "Security management API")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController extends AbstractWebErrorHandler {
 
     private final AuthenticationService authenticationService;
 
