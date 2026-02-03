@@ -51,13 +51,13 @@ configurations {
 }
 
 dependencies {
-    // Spring Boot Starters (основные)
+    // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-web")
 
-    // WebSocket поддержка
+    // WebSocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
 
-    // MapStruct аннотационные процессоры (нужны, если используете маппинги)
+    // MapStruct
     annotationProcessor("org.mapstruct:mapstruct-processor")
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding")
 
@@ -65,10 +65,10 @@ dependencies {
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
-    // Внутренние зависимости
+    // Inner dependencies
     implementation(project(":common"))
 
-    // Тестирование
+    // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }

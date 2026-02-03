@@ -1,5 +1,5 @@
 plugins {
-    id("java-library") // ВАЖНО: для использования api конфигурации
+    id("java-library")
 }
 
 java {
@@ -19,19 +19,19 @@ tasks.withType<JavaCompile> {
 }
 
 dependencies {
-    // API зависимости - будут экспортированы потребителям этого модуля
+    // API dependencies
     api("org.springframework.boot:spring-boot-starter-web")
     api("org.springframework.boot:spring-boot-starter-validation")
     api("org.springdoc:springdoc-openapi-starter-webmvc-ui")
     api("org.mapstruct:mapstruct")
 
-    // Компиляция только для этого модуля
+    // Utilities
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("org.mapstruct:mapstruct-processor")
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding")
 
-    // Тестирование
+    // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 

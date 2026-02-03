@@ -51,7 +51,7 @@ subprojects {
     }
 }
 
-// Dependency Management для всех модулей
+// Dependency Management for all modules
 configure(subprojects) {
     the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
         imports {
@@ -61,7 +61,7 @@ configure(subprojects) {
     }
 }
 
-// Common модуль
+// Common module
 project(":common") {
     dependencies {
         implementation("org.springframework.boot:spring-boot-starter")
@@ -75,7 +75,7 @@ project(":common") {
     }
 }
 
-// Spring Boot модули
+// Spring Boot modules
 Module.SERVICES.forEach { module ->
     project(":${module.moduleName}") {
         apply(plugin = "org.springframework.boot")

@@ -1,4 +1,3 @@
-// gw/build.gradle.kts (минимальный)
 dependencies {
     // Spring Cloud
     implementation("org.springframework.cloud:spring-cloud-starter-gateway")
@@ -13,7 +12,7 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson")
 
-    // Условная зависимость для macOS
+    // Mac OS specific dependency
     val isMacOS = System.getProperty("os.name").lowercase().contains("mac")
     val isArm64 = System.getProperty("os.arch").lowercase().contains("aarch64")
 

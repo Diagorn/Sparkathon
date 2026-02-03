@@ -1,4 +1,3 @@
-// auth/build.gradle.kts (минимальный)
 dependencies {
     // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-security")

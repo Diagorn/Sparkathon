@@ -1,11 +1,11 @@
-// event/build.gradle.kts (минимальный с Flyway)
+// event/build.gradle.kts
 plugins {
     id("org.springframework.boot")
     id("org.flywaydb.flyway") version "9.22.3"
 }
 
 flyway {
-    // Конфигурация Flyway (пример)
+    // Flyway config
     url = "jdbc:postgresql://localhost:5432/event?currentSchema=event"
     user = "postgres"
     password = "postgres"
