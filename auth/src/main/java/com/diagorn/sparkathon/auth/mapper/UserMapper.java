@@ -2,7 +2,7 @@ package com.diagorn.sparkathon.auth.mapper;
 
 import com.diagorn.sparkathon.auth.domain.User;
 import com.diagorn.sparkathon.auth.dto.user.UserDTO;
-import org.codehaus.plexus.util.StringUtils;
+import io.micrometer.common.util.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

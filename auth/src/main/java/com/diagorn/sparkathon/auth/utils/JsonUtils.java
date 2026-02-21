@@ -3,7 +3,7 @@ package com.diagorn.sparkathon.auth.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.codehaus.plexus.util.StringUtils;
+import io.micrometer.common.util.StringUtils;
 
 /**
  * Utilities to work with JSON
