@@ -1,27 +1,18 @@
-package com.diagorn.sparkathon.auth.service;
+package com.diagorn.sparkathon.auth.service
 
-import com.diagorn.sparkathon.auth.client.KafkaClient;
-import com.diagorn.sparkathon.auth.config.properties.KafkaTopicProperties;
-import com.diagorn.sparkathon.auth.domain.User;
-import com.diagorn.sparkathon.auth.dto.kafka.NewUserContactsEvent;
-import com.diagorn.sparkathon.auth.dto.user.UserDTO;
-import com.diagorn.sparkathon.auth.dto.user.UserRegistrationRequest;
-import com.diagorn.sparkathon.auth.mapper.UserMapper;
-import com.diagorn.sparkathon.auth.repo.UserRepository;
-import com.diagorn.sparkathon.common.exception.BadRequestException;
-import com.diagorn.sparkathon.common.exception.NotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import jakarta.transaction.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
+import com.diagorn.sparkathon.auth.client.KafkaClient
+import com.diagorn.sparkathon.auth.config.properties.KafkaTopicProperties
+import com.diagorn.sparkathon.auth.dto.user.UserDto
+import com.diagorn.sparkathon.auth.dto.user.UserRegistrationRequest
+import com.diagorn.sparkathon.auth.mapper.UserMapper
+import com.diagorn.sparkathon.auth.repo.UserRepository
+import com.diagorn.sparkathon.auth.utils.Messages
+import com.diagorn.sparkathon.common.exception.BadRequestException
+import jakarta.transaction.Transactional
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.stereotype.Service
 
 /**
  * User service
@@ -29,17 +20,13 @@ import java.util.Optional;
  * @author diagorn
  */
 @Service
-@RequiredArgsConstructor
-public class UserService implements UserDetailsService {
+class UserService(
+    private val userMapper: UserMapper,
+    private val userRepository: UserRepository,
+    private val kafkaClient: KafkaClient,
+    private val kafkaTopicProperties: KafkaTopicProperties,
+) : UserDetailsService {
 
-    private final RoleService roleService;
-
-    private final UserMapper userMapper;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final KafkaClient kafkaClient;
-
-    private final KafkaTopicProperties kafkaTopicProperties;
     /**
      * Load user by login
      *
@@ -47,13 +34,7 @@ public class UserService implements UserDetailsService {
      * @return user
      * @throws UsernameNotFoundException if such login is absent in db
      */
-    @Override
-    public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
-        return Optional.ofNullable(userRepository.findByLogin(login))
-                .orElseThrow(() -> new UsernameNotFoundException(
-                        String.format("User by login %s not found", login)
-                ));
-    }
+    override fun loadUserByUsername(login: String) = userRepository.getByLogin(login)
 
     /**
      * Save a new user
@@ -61,43 +42,43 @@ public class UserService implements UserDetailsService {
      * @return new user
      */
     @Transactional
-    public UserDTO saveNewUser(UserRegistrationRequest request) {
-        User user = User.builder()
-                .role(roleService.getById(request.getRoleId()))
-                .login(request.getLogin())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .email(request.getEmail())
-                .telegramNickname(request.getTelegramNickname())
-                .build();
+    fun saveNewUser(request: UserRegistrationRequest): UserDto {
+        var user = userMapper.toEntity(request)
 
         try {
-            user = userRepository.saveAndFlush(user);
-        } catch (DataIntegrityViolationException e) {
-            throw new BadRequestException("Could not save new user: person with such login or email already exists");
+            user = userRepository.saveAndFlush(user)
+        } catch (e: DataIntegrityViolationException) {
+            throw BadRequestException(Messages.userCreationFailed())
         }
 
-        kafkaClient.sendUserContacts(getUserContacts(user), kafkaTopicProperties.getNewUser());
+        kafkaClient.sendUserContacts(
+            data = userMapper.toUserContactsEvent(user),
+            topic = kafkaTopicProperties.newUser
+        )
 
-        return userMapper.toDTO(user);
+        return userMapper.toDto(user)
     }
 
     /**
      * Update a user
-     * @param userDTO - updated user fields
+     * @param userDto - updated user fields
      * @return
      */
     @Transactional
-    public UserDTO updateUser(UserDTO userDTO) {
-        User dbUser = get(userDTO.getId());
-        User user = userMapper.toEntity(userDTO);
+    fun updateUser(userDto: UserDto): UserDto {
+        val dbUser = userRepository.getById(userDto.id)
+        val user = userMapper.toEntity(userDto, dbUser.password)
 
-        user.setPassword(dbUser.getPassword());
-        user.setRole(dbUser.getRole());
-        userRepository.save(user);
+        user.password = dbUser.getPassword()
+        user.role = dbUser.role
+        userRepository.save(user)
 
-        kafkaClient.sendUserContacts(getUserContacts(user), kafkaTopicProperties.getEditUser());
+        kafkaClient.sendUserContacts(
+            data = userMapper.toUserContactsEvent(user),
+            topic = kafkaTopicProperties.newUser
+        )
 
-        return userMapper.toDTO(user);
+        return userMapper.toDto(user)
     }
 
     /**
@@ -105,27 +86,5 @@ public class UserService implements UserDetailsService {
      * @param id - user ID
      * @return found user
      */
-    public UserDTO getById(Long id) {
-        return userMapper.toDTO(get(id));
-    }
-
-    /**
-     * Get user by ID
-     * Throws NotFoundException if ID is not found in the database
-     * @param id - user ID
-     * @return found user
-     */
-    private User get(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-    }
-
-    private NewUserContactsEvent getUserContacts(User user) {
-        return NewUserContactsEvent.builder()
-                .id(user.getId())
-                .telegramNickname(user.getTelegramNickname())
-                .email(user.getEmail())
-                .createdAt(LocalDateTime.now())
-                .build();
-    }
+    fun getById(id: Long): UserDto = userMapper.toDto(userRepository.getById(id))
 }

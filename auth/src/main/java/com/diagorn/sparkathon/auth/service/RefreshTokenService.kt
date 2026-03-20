@@ -1,20 +1,13 @@
-package com.diagorn.sparkathon.auth.service;
+package com.diagorn.sparkathon.auth.service
 
-import com.diagorn.sparkathon.auth.domain.RefreshToken;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
-
-import static com.diagorn.sparkathon.auth.utils.JsonUtils.fromJson;
-import static com.diagorn.sparkathon.auth.utils.JsonUtils.toJson;
+import com.diagorn.sparkathon.auth.domain.RefreshToken
+import com.diagorn.sparkathon.auth.utils.JsonUtils
+import com.diagorn.sparkathon.auth.utils.Messages
+import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.stereotype.Service
+import java.time.Duration
+import java.time.Instant
 
 /**
  * Service for working with refresh tokens
@@ -22,11 +15,9 @@ import static com.diagorn.sparkathon.auth.utils.JsonUtils.toJson;
  * @author diagorn
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
-public class RefreshTokenService {
-    private static final String KEY_PREFIX = "refresh_token:";
-    private final StringRedisTemplate redisTemplate;
+class RefreshTokenService(
+    private val redisTemplate: StringRedisTemplate
+) {
 
     /**
      * Save new refresh token
@@ -35,9 +26,9 @@ public class RefreshTokenService {
      * @param userId       - user that has this token
      * @param ttl          - time to live
      */
-    public void saveRefreshToken(String refreshToken, Long userId, Duration ttl) {
-        var token = new RefreshToken(userId, false, Instant.now());
-        redisTemplate.opsForValue().set(getTokenKey(refreshToken), toJson(token), ttl);
+    fun saveRefreshToken(refreshToken: String, userId: Long, ttl: Duration) {
+        val token = RefreshToken(userId, false, Instant.now())
+        redisTemplate.opsForValue()[getTokenKey(refreshToken), JsonUtils.toJson(token)] = ttl
     }
 
     /**
@@ -46,10 +37,11 @@ public class RefreshTokenService {
      * @param refreshToken - token
      * @return validity fact
      */
-    public boolean isValid(String refreshToken) {
-        return Optional.ofNullable(redisTemplate.opsForValue().get(getTokenKey(refreshToken)))
-                .map(jsonTokenInfo -> !fromJson(jsonTokenInfo, RefreshToken.class).isRevoked())
-                .orElse(false);
+    fun isValid(refreshToken: String): Boolean {
+        val tokenKey = getTokenKey(refreshToken)
+        val jsonTokenInfo = redisTemplate.opsForValue()[tokenKey]
+        val tokenInfo = JsonUtils.fromJson(jsonTokenInfo, RefreshToken::class.java)
+        return !tokenInfo.revoked
     }
 
     /**
@@ -58,53 +50,47 @@ public class RefreshTokenService {
      * @param refreshToken - token
      * @throws IllegalStateException if token is absent
      */
-    public void revoke(String refreshToken) throws IllegalStateException {
-        var key = getTokenKey(refreshToken);
-        Optional.ofNullable(redisTemplate.opsForValue().get(key))
-                .ifPresentOrElse(jsonTokenInfo -> {
-                    var token = fromJson(jsonTokenInfo, RefreshToken.class);
-                    token.setRevoked(true);
-                    redisTemplate.opsForValue().set(key, toJson(token));
-                }, () -> {
-                    throw new IllegalStateException(
-                            String.format(
-                                    "Token %s does not exist",
-                                    refreshToken
-                            )
-                    );
-                });
+    fun revoke(refreshToken: String) {
+        val key = getTokenKey(refreshToken)
+        val jsonTokenInfo = redisTemplate.opsForValue()[key]
+            ?: throw IllegalStateException(Messages.tokenDoesNotExist(refreshToken))
+
+        val token = JsonUtils.fromJson(
+            jsonTokenInfo,
+            RefreshToken::class.java
+        )
+        token.revoked = true
+        redisTemplate.opsForValue()[key] = JsonUtils.toJson(token)
     }
 
     /**
      * Revoke all refresh tokens for user
-     * @param userId - user id
+     * @param id - user id
      */
-    public void revokeForUser(Long userId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID is null");
+    fun revokeForUser(id: Long?) {
+        val userId = id ?: throw IllegalArgumentException(Messages.nullUserId())
+
+        val keysPattern = "$KEY_PREFIX*"
+        val keys = redisTemplate.opsForValue().operations.keys(keysPattern)
+
+        if (keys.isNullOrEmpty()) {
+            throw IllegalStateException(Messages.userLoggedOut())
         }
 
-        var keysPattern = String.format("%s*", KEY_PREFIX);
-        var keys = redisTemplate.opsForValue().getOperations().keys(keysPattern);
-        if (CollectionUtils.isEmpty(keys)) {
-            throw new IllegalStateException("User is already logged out");
-        }
-
-        keys.forEach(key -> {
-            var tokenJsonInfo = redisTemplate.opsForValue().get(key);
-            var token = fromJson(tokenJsonInfo, RefreshToken.class);
-            if (Objects.equals(token.getUserId(), userId)) {
-                redisTemplate.delete(key);
+        keys.forEach {
+            val tokenJsonInfo = redisTemplate.opsForValue()[it]
+            val token = JsonUtils.fromJson(tokenJsonInfo, RefreshToken::class.java)
+            if (token.userId == userId) {
+                redisTemplate.delete(it)
             }
-        });
+        }
     }
 
-    private String hash(String string) {
-        return DigestUtils.sha256Hex(string);
-    }
+    private fun hash(string: String) = DigestUtils.sha256Hex(string)
 
-    private String getTokenKey(String token) {
-        var tokenHash = hash(token);
-        return String.format("%s%s", KEY_PREFIX, tokenHash);
+    private fun getTokenKey(token: String) = KEY_PREFIX + hash(token)
+
+    companion object {
+        private const val KEY_PREFIX = "refresh_token:"
     }
 }

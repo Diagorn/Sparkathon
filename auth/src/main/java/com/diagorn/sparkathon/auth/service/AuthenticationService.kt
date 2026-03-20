@@ -1,19 +1,18 @@
-package com.diagorn.sparkathon.auth.service;
+package com.diagorn.sparkathon.auth.service
 
-import com.diagorn.sparkathon.auth.config.properties.JwtProperties;
-import com.diagorn.sparkathon.auth.domain.User;
-import com.diagorn.sparkathon.auth.dto.auth.*;
-import com.diagorn.sparkathon.auth.repo.UserRepository;
-import com.diagorn.sparkathon.common.exception.BadRequestException;
-import com.diagorn.sparkathon.common.exception.NotFoundException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import com.diagorn.sparkathon.auth.config.properties.JwtProperties
+import com.diagorn.sparkathon.auth.dto.auth.*
+import com.diagorn.sparkathon.auth.repo.UserRepository
+import com.diagorn.sparkathon.auth.utils.SECOND
+import com.diagorn.sparkathon.common.exception.BadRequestException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.stereotype.Service
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
+val logger: Logger = LoggerFactory.getLogger(AuthenticationService.Companion::class.java)
 
 /**
  * Authentication, login, logout, revoke service
@@ -21,149 +20,130 @@ import java.util.Optional;
  * @author diagorn
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
-public class AuthenticationService {
-
-    private final String REVOKE_SUCCESS_MSG = "Refresh token successfully revoked";
-    private final String REVOKE_ERROR_MSG = "Revoking refresh token failure: refresh token not found";
-    private final String LOGOUT_SUCCESS_MSG = "Logout success";
-
-    private final RefreshTokenService refreshTokenService;
-    private final JwtService jwtService;
-
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtProperties jwtProperties;
+class AuthenticationService(
+    private val refreshTokenService: RefreshTokenService,
+    private val jwtService: JwtService,
+    private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder,
+    private val jwtProperties: JwtProperties,
+) {
+    private val REVOKE_SUCCESS_MSG = "Refresh token successfully revoked"
+    private val REVOKE_ERROR_MSG = "Revoking refresh token failure: refresh token not found"
+    private val LOGOUT_SUCCESS_MSG = "Logout success"
 
     /**
      * Attempt to log in
      * @param request - login request
      */
-    public LoginResponse login(LoginRequest request) {
-        var user = getUser(request.getLogin());
-        if (user == null) {
-            throw new NotFoundException("User not found");
+    fun login(request: LoginRequest): LoginResponse {
+        val user = userRepository.getByLogin(request.login)
+
+        if (!passwordEncoder.matches(request.password, user.getPassword())) {
+            throw BadRequestException("Username or password is wrong")
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadRequestException("Username or password is wrong");
-        }
-
-        var accessToken = jwtService.generateAccessToken(user);
-        var refreshToken = jwtService.generateRefreshToken(user);
+        val accessToken = jwtService.generateAccessToken(user)
+        val refreshToken = jwtService.generateRefreshToken(user)
 
         refreshTokenService.saveRefreshToken(
-                refreshToken,
-                user.getId(),
-                Duration.of(jwtProperties.getRefreshExpireTimeSec(), ChronoUnit.SECONDS)
-        );
+            refreshToken,
+            user.id,
+            Duration.of(jwtProperties.refreshExpireTimeSec.toLong(), ChronoUnit.SECONDS)
+        )
 
-        return LoginResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expiresIn(1_000L * jwtProperties.getAccessExpireTimeSec())
-                .role(user.getRole().getName())
-                .build();
+        return LoginResponse(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            expiresIn = SECOND * jwtProperties.accessExpireTimeSec,
+            role = user.role.name
+        )
     }
 
     /**
      * Validate token
      * @param request - validation request
      */
-    public ValidateTokenResponse validate(ValidateTokenRequest request) {
-        var login = jwtService.getUsernameFromToken(request.getToken());
-        var user = getUser(login);
+    fun validate(request: ValidateTokenRequest): ValidateTokenResponse {
+        val login = jwtService.getUsernameFromToken(request.token)
+        val user = userRepository.getByLogin(login)
 
-        var isValid = jwtService.validateToken(request.getToken(), user);
-        var expiresAt = jwtService.getExpirationDateFromToken(request.getToken());
+        val isValid = jwtService.validateToken(request.token, user)
+        val expiresAt = jwtService.getExpirationDateFromToken(request.token)
 
-        return ValidateTokenResponse.builder()
-                .isValid(isValid)
-                .expiresIn(expiresAt.getTime())
-                .role(user.getRole().getName())
-                .build();
+        return ValidateTokenResponse(
+            isValid = isValid,
+            expiresIn = expiresAt.time,
+            user.role.name
+        )
     }
 
     /**
      * Refresh access token
      * @param request - refreshment request
      */
-    public RefreshTokenResponse refresh(RefreshTokenRequest request) {
-        var user = getUser(jwtService.getUsernameFromToken(request.getRefreshToken()));
-        boolean valid;
-        try {
-            valid = jwtService.validateToken(request.getRefreshToken(), user);
-        } catch (Exception e) {
-            String errorMsg = String.format("Could not validate token %s", request.getRefreshToken());
-            log.error("Could not validate token {}", request.getRefreshToken());
-            throw new IllegalArgumentException(errorMsg, e);
+    fun refresh(request: RefreshTokenRequest): RefreshTokenResponse {
+        val login = jwtService.getUsernameFromToken(request.refreshToken)
+        val user = userRepository.getByLogin(login)
+        val valid = try {
+            jwtService.validateToken(request.refreshToken, user)
+        } catch (e: Exception) {
+            val errorMsg = "Could not validate token ${request.refreshToken}"
+            throw IllegalArgumentException(errorMsg, e)
         }
 
         if (!valid) {
-            log.error("Token {} is invalid", request.getRefreshToken());
-            throw new IllegalArgumentException(
-                    String.format("Token %s is invalid", request.getRefreshToken())
-            );
+            val errorMsg = "Token ${request.refreshToken} is invalid"
+            throw IllegalArgumentException(errorMsg)
         }
 
-        var accessToken = jwtService.generateAccessToken(user);
-        return RefreshTokenResponse.builder()
-                .accessToken(accessToken)
-                .expiresIn(1_000L * jwtProperties.getAccessExpireTimeSec())
-                .build();
+        val accessToken = jwtService.generateAccessToken(user)
+        return RefreshTokenResponse(
+            accessToken = accessToken,
+            expiresIn = SECOND * jwtProperties.accessExpireTimeSec
+        )
     }
 
     /**
      * Revoke refresh token
      * @param request - revoke token request
      */
-    public RevokeTokenResponse revoke(RevokeTokenRequest request) {
-        boolean revoked;
-        String message;
-        try {
-            refreshTokenService.revoke(request.getRefreshToken());
-            message = REVOKE_SUCCESS_MSG;
-            revoked = true;
-        } catch (IllegalStateException e) {
-            message = REVOKE_ERROR_MSG;
-            revoked = false;
+    fun revoke(request: RevokeTokenRequest): RevokeTokenResponse {
+        val (message, revoked) = try {
+            refreshTokenService.revoke(request.refreshToken)
+            REVOKE_SUCCESS_MSG to true
+        } catch (e: RuntimeException) {
+            REVOKE_ERROR_MSG to false
         }
 
-        return RevokeTokenResponse.builder()
-                .revoked(revoked)
-                .message(message)
-                .build();
+        return RevokeTokenResponse(
+            revoked = revoked,
+            message = message
+        )
     }
 
     /**
      * Logout
      * @param request - logout request
      */
-    public LogoutResponse logout(LogoutRequest request) {
-        var user = getUser(jwtService.getUsernameFromToken(request.getRefreshToken()));
+    fun logout(request: LogoutRequest): LogoutResponse {
+        val login = jwtService.getUsernameFromToken(request.refreshToken)
+        val user = userRepository.getByLogin(login)
 
-        boolean success;
-        String message;
-        try {
-            refreshTokenService.revokeForUser(user.getId());
-            message = LOGOUT_SUCCESS_MSG;
-            success = true;
-        } catch (RuntimeException e) {
-            message = e.getMessage();
-            success = false;
+        val (message, success) = try {
+            refreshTokenService.revokeForUser(user.id)
+            LOGOUT_SUCCESS_MSG to true
+        } catch (e: RuntimeException) {
+            logger.error("Could not logout", e)
+            e.message to false
         }
 
-        return LogoutResponse.builder()
-                .success(success)
-                .message(message)
-                .build();
+        return LogoutResponse(
+            success = success,
+            message = message ?: COULD_NOT_LOGOUT
+        )
     }
 
-    private User getUser(String login) {
-        return Optional.ofNullable(userRepository.findByLogin(login))
-                .orElseThrow(() -> new NotFoundException(
-                        String.format("User with login %s not found", login)
-                ));
+    companion object {
+        const val COULD_NOT_LOGOUT = "Could not logout. Please contact support"
     }
 }

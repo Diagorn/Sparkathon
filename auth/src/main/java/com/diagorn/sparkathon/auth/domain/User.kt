@@ -1,29 +1,19 @@
-package com.diagorn.sparkathon.auth.domain;
+package com.diagorn.sparkathon.auth.domain
 
-import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import com.diagorn.sparkathon.auth.dto.kafka.NewUserContactsEvent
+import com.diagorn.sparkathon.common.exception.BadRequestException
+import com.diagorn.sparkathon.common.exception.SparkathonException
+import jakarta.persistence.*
+import org.apache.commons.lang3.StringUtils
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.userdetails.UserDetails
+import java.time.LocalDateTime
+import java.util.*
 
-import jakarta.persistence.*;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-
-/**
- * System user
- *
- * @author diagorn
- */
 @Entity
 @Table(name = "usr")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@Builder
-public class User extends AbstractEntity implements UserDetails {
+class User(
     /**
      * Identifier
      */
@@ -31,78 +21,91 @@ public class User extends AbstractEntity implements UserDetails {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "usr_id_gen")
     @SequenceGenerator(name = "usr_id_gen", sequenceName = "usr_id_seq", allocationSize = 1)
     @Column(name = "id")
-    protected Long id;
+    var id: Long = 0,
+
     /**
      * User role
      */
-    @ManyToOne(targetEntity = Role.class, fetch = FetchType.EAGER)
+    @ManyToOne(targetEntity = Role::class, fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id")
-    private Role role;
+    var role: Role,
+
     /**
      * First name
      */
     @Column(name = "first_name", nullable = false)
-    private String firstName;
+    var firstName: String,
+
     /**
      * Middle name
      */
     @Column(name = "middle_name")
-    private String middleName;
+    var middleName: String?,
+
     /**
      * Last name
      */
     @Column(name = "last_name", nullable = false)
-    private String lastName;
+    var lastName: String,
+
     /**
      * User login (username)
      */
     @Column(name = "login", nullable = false, unique = true)
-    private String login;
+    var login: String,
+
     /**
      * User password
      */
     @Column(name = "password", nullable = false)
-    private String password;
+    var password: String,
+
     /**
      * User email
      */
     @Column(name = "email", nullable = false, unique = true)
-    private String email;
+    var email: String,
+
     /**
      * Telegram nickname
      */
-    @Column(name = "telegram_nickname")
-    private String telegramNickname;
+    @Column(name = "telegram_nickname", nullable = false, unique = true)
+    var telegramNickname: String
+) : AbstractEntity(), UserDetails {
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
+    fun fullName(): String {
+        if (firstName.isEmpty() || lastName.isEmpty()) {
+            throw BadRequestException("User with id $id has invalid firstName: $firstName or lastName: $lastName")
+        }
+
+        return middleName?.takeIf { it.isNotEmpty() }?.let {
+            "$lastName ${firstName.first()}. ${it.first()}."
+        } ?: "$lastName ${firstName.first()}."
+    }
+
+    override fun getAuthorities(): Collection<GrantedAuthority?> {
         return Optional.ofNullable(this.role)
-                .map(role -> Collections.singleton(new SimpleGrantedAuthority(this.role.getName())))
-                .orElse(Collections.emptySet());
+            .map<Set<SimpleGrantedAuthority?>> {
+                setOf(
+                    SimpleGrantedAuthority(
+                        this.role.name
+                    )
+                )
+            }
+            .orElse(emptySet<SimpleGrantedAuthority>())
     }
 
-    @Override
-    public String getUsername() {
-        return this.login;
-    }
+    override fun getPassword(): String = password
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    override fun getUsername(): String = login
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
 
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    override fun isAccountNonExpired(): Boolean = true
 
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
+    override fun isAccountNonLocked(): Boolean = true
+
+    override fun isCredentialsNonExpired(): Boolean = true
+
+    override fun isEnabled(): Boolean = true
+
 }

@@ -1,38 +1,27 @@
-package com.diagorn.sparkathon.auth.client;
+package com.diagorn.sparkathon.auth.client
 
-import com.diagorn.sparkathon.auth.dto.kafka.NewUserContactsEvent;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Component;
+import com.diagorn.sparkathon.auth.dto.kafka.NewUserContactsEvent
+import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.stereotype.Component
+import java.util.*
 
-import java.util.Objects;
-
-/**
- * Client that sends data to Kafka
- *
- * @author diagorn
- */
 @Component
-@RequiredArgsConstructor
-public class KafkaClient {
-
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final KafkaTemplate<Long, NewUserContactsEvent> newUserContactsEventKafkaTemplate;
-
-    public void send(String json, String topic) {
-        checkFields(json, topic);
-        kafkaTemplate.send(topic, json);
+class KafkaClient(
+    private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val newUserContactsEventKafkaTemplate: KafkaTemplate<Long, NewUserContactsEvent>
+) {
+    fun send(json: String, topic: String) {
+        validateFields(json, topic)
+        kafkaTemplate.send(topic, json)
     }
 
-    public void sendUserContacts(NewUserContactsEvent data, String topic) {
-        checkFields(data, topic);
-        newUserContactsEventKafkaTemplate.send(topic, data.getId(), data);
+    fun sendUserContacts(data: NewUserContactsEvent, topic: String) {
+        validateFields(data, topic)
+        newUserContactsEventKafkaTemplate.send(topic, data.id, data)
     }
 
-    private <T> void checkFields(T data, String topic) {
-        Objects.requireNonNull(data, "Could not send message to kafka: data is null");
-        Objects.requireNonNull(topic, "Could not send message to kafka: topic is null");
+    private fun <T> validateFields(data: T, topic: String) {
+        Objects.requireNonNull(data, "Could not send message to kafka: data is null")
+        Objects.requireNonNull(topic, "Could not send message to kafka: topic is null")
     }
 }

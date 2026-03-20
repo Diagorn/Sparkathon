@@ -1,21 +1,15 @@
-package com.diagorn.sparkathon.auth.service;
+package com.diagorn.sparkathon.auth.service
 
-import com.diagorn.sparkathon.auth.config.properties.JwtProperties;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.codehaus.plexus.util.StringUtils;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
+import com.diagorn.sparkathon.auth.config.properties.JwtProperties
+import com.diagorn.sparkathon.auth.utils.SECOND
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.stereotype.Service
+import java.nio.charset.StandardCharsets
+import java.util.*
+import java.util.function.Function
 
 /**
  * JWT management service
@@ -23,11 +17,9 @@ import java.util.function.Function;
  * @author diagorn
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
-public class JwtService {
-
-    private final JwtProperties jwtProperties;
+class JwtService(
+    private val jwtProperties: JwtProperties
+) {
 
     /**
      * Generate access token for user
@@ -35,10 +27,14 @@ public class JwtService {
      * @param userDetails - user
      * @return access token
      */
-    public String generateAccessToken(UserDetails userDetails) {
-        var role = getRole(userDetails);
-        Map<String, Object> claims = new HashMap<>();
-        return doGenerateToken(claims, userDetails.getUsername(), getRole(userDetails), jwtProperties.getAccessExpireTimeSec());
+    fun generateAccessToken(userDetails: UserDetails): String {
+        val claims: Map<String, Any?> = emptyMap()
+        return doGenerateToken(
+            claims,
+            userDetails.username,
+            getRole(userDetails),
+            jwtProperties.accessExpireTimeSec.toLong()
+        )
     }
 
     /**
@@ -47,9 +43,14 @@ public class JwtService {
      * @param userDetails - user
      * @return refresh token
      */
-    public String generateRefreshToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        return doGenerateToken(claims, userDetails.getUsername(), getRole(userDetails), jwtProperties.getRefreshExpireTimeSec());
+    fun generateRefreshToken(userDetails: UserDetails): String {
+        val claims: Map<String, Any?> = HashMap()
+        return doGenerateToken(
+            claims,
+            userDetails.username,
+            getRole(userDetails),
+            jwtProperties.refreshExpireTimeSec.toLong()
+        )
     }
 
     /**
@@ -59,17 +60,16 @@ public class JwtService {
      * @param userDetails - user
      * @return validity fact
      */
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        String username;
-        try {
-            username = getUsernameFromToken(token);
-        } catch (Exception e) {
-            username = null;
+    fun validateToken(token: String?, userDetails: UserDetails): Boolean {
+        val username = try {
+            getUsernameFromToken(token)
+        } catch (e: Exception) {
+            null
         }
 
-        return (StringUtils.isNotEmpty(username)
-                && username.equals(userDetails.getUsername())
-                && !isTokenExpired(token));
+        return username?.isNotEmpty() ?: false
+                && username == userDetails.username
+                && !isTokenExpired(token)
     }
 
     /**
@@ -78,9 +78,7 @@ public class JwtService {
      * @param token - token
      * @return expiration date
      */
-    public Date getExpirationDateFromToken(String token) {
-        return getClaimFromToken(token, Claims::getExpiration);
-    }
+    fun getExpirationDateFromToken(token: String?): Date = getClaimFromToken(token) { obj: Claims -> obj.expiration }
 
     /**
      * Get username from token
@@ -88,48 +86,41 @@ public class JwtService {
      * @param token - token
      * @return username
      */
-    public String getUsernameFromToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
-    }
+    fun getUsernameFromToken(token: String?): String = getClaimFromToken(token) { obj: Claims -> obj.subject }
 
-    private Boolean isTokenExpired(String token) {
-        Date expiration;
-        try {
-            expiration = getExpirationDateFromToken(token);
-        } catch (Exception e) {
-            expiration = null;
+    private fun isTokenExpired(token: String?): Boolean {
+        val expiration = try {
+            getExpirationDateFromToken(token)
+        } catch (e: Exception) {
+            null
         }
-        return expiration == null || expiration.before(new Date());
+        return expiration == null || expiration.before(Date())
     }
 
-    private <T> T getClaimFromToken(String token, Function<Claims, T> claimResolver) {
-        var claims = getAllClaimsFromToken(token);
-        return claimResolver.apply(claims);
+    private fun <T> getClaimFromToken(token: String?, claimResolver: Function<Claims, T>): T {
+        val claims = getAllClaimsFromToken(token)
+        return claimResolver.apply(claims)
     }
 
-    private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8)))
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
+    private fun getAllClaimsFromToken(token: String?): Claims = Jwts.parserBuilder()
+            .setSigningKey(Keys.hmacShaKeyFor(jwtProperties.secret.toByteArray(StandardCharsets.UTF_8)))
+            .build()
+            .parseClaimsJws(token)
+            .body
 
-    private String doGenerateToken(Map<String, Object> claims, String subject, String role, long expireSec) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .claim("role", role)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expireSec * 1_000))
-                .signWith(Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8)))
-                .compact();
-    }
+    private fun doGenerateToken(claims: Map<String, Any?>, subject: String, role: String?, expireSec: Long): String =
+        Jwts.builder()
+            .setClaims(claims)
+            .setSubject(subject)
+            .claim(ROLE, role)
+            .setIssuedAt(Date(System.currentTimeMillis()))
+            .setExpiration(Date(System.currentTimeMillis() + expireSec * SECOND))
+            .signWith(Keys.hmacShaKeyFor(jwtProperties.secret.toByteArray(StandardCharsets.UTF_8)))
+            .compact()
 
-    private String getRole(UserDetails userDetails) {
-        return userDetails.getAuthorities().stream()
-                .findFirst()
-                .map(GrantedAuthority::getAuthority)
-                .orElse(null);
+    private fun getRole(userDetails: UserDetails): String? = userDetails.authorities.firstOrNull()?.authority
+
+    companion object {
+        const val ROLE = "role"
     }
 }

@@ -1,25 +1,19 @@
-package com.diagorn.sparkathon.auth.utils;
+package com.diagorn.sparkathon.auth.utils
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.codehaus.plexus.util.StringUtils;
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 
 /**
  * Utilities to work with JSON
  *
  * @author mikhail.gasin
  */
-public class JsonUtils {
+object JsonUtils {
+    private val objectMapper = ObjectMapper()
 
-    private static final ObjectMapper objectMapper;
-
-    static {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-    }
-
-    private JsonUtils() {
+    init {
+        objectMapper.registerModule(JavaTimeModule())
     }
 
     /**
@@ -28,13 +22,12 @@ public class JsonUtils {
      * @param obj - object
      * @return JSON representation
      */
-    public static String toJson(Object obj) {
+    fun toJson(obj: Any?): String =
         try {
-            return objectMapper.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Could not write object as JSON", e);
+            objectMapper.writeValueAsString(obj)
+        } catch (e: JsonProcessingException) {
+            throw RuntimeException(JSON_WRITE_FAILED, e)
         }
-    }
 
     /**
      * Convert JSON to POJO
@@ -43,19 +36,22 @@ public class JsonUtils {
      * @param clazz - class to be converted to
      * @param <T>   - POJO data type
      * @return clazz instance
-     */
-    public static <T> T fromJson(String json, Class<T> clazz) {
-        if (StringUtils.isEmpty(json)) {
-            throw new IllegalArgumentException("JSON is empty");
+    </T> */
+    fun <T> fromJson(json: String?, clazz: Class<T>): T {
+        if (json.isNullOrEmpty()) {
+            throw IllegalArgumentException(EMPTY_JSON)
         }
 
-        try {
-            return objectMapper.readValue(json, clazz);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(String.format(
-                    "Could not read value from JSON %s for class %s",
-                    json, clazz.getName()
-            ), e);
+        return try {
+            objectMapper.readValue(json, clazz)
+        } catch (e: JsonProcessingException) {
+            throw RuntimeException(couldNotReadClass(json, clazz.name))
         }
     }
+
+    private fun couldNotReadClass(json: String, className: String) =
+        "Could not read value from JSON $json for class $className"
+
+    const val JSON_WRITE_FAILED = "Could not write object as JSON"
+    const val EMPTY_JSON = "JSON is empty"
 }

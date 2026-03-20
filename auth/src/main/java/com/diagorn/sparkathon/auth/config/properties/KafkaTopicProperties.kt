@@ -1,7 +1,6 @@
-package com.diagorn.sparkathon.auth.config.properties;
+package com.diagorn.sparkathon.auth.config.properties
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties
 
 /**
  * Topic properties for kafka
@@ -9,22 +8,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author diagorn
  */
 @ConfigurationProperties(prefix = "spring.kafka.topics")
-@Data
-public class KafkaTopicProperties {
+class KafkaTopicProperties(
     /**
      * New user created topic
      */
-    private String newUser;
+    val newUser: String,
     /**
      * Number of partitions for new user topic
      */
-    private Integer newUserPartitionNum;
+    val newUserPartitionNum: Int,
+
     /**
      * User edited topic
      */
-    private String editUser;
+    val editUser: String,
+
     /**
      * Number of partitions for edit user topic
      */
-    private Integer editUserPartitionNum;
-}
+    val editUserPartitionNum: Int
+)

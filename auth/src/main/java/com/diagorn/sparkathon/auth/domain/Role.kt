@@ -1,9 +1,6 @@
-package com.diagorn.sparkathon.auth.domain;
+package com.diagorn.sparkathon.auth.domain
 
-import lombok.*;
-
-import jakarta.persistence.*;
-import java.util.List;
+import jakarta.persistence.*
 
 /**
  * User role
@@ -12,31 +9,28 @@ import java.util.List;
  */
 @Entity
 @Table(name = "role")
-@Getter
-@Setter
-@NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class Role extends AbstractEntity {
+class Role(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "role_id_gen")
     @SequenceGenerator(name = "role_id_gen", sequenceName = "role_id_seq", allocationSize = 1)
     @Column(name = "id")
-    protected Long id;
+    var id: Long = 0,
+
     /**
      * Role name
      */
     @Column(name = "name")
-    private String name;
+    var name: String,
 
     /**
      * Is role allowed for creation via API
      */
     @Column(name = "is_allowed_for_creation", nullable = false)
-    private Boolean isAllowedForCreation;
+    var isAllowedForCreation: Boolean = false,
 
     /**
      * Users with given role
      */
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "role")
-    private List<User> users;
-}
+    val users: List<User> = emptyList()
+) : AbstractEntity()

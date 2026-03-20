@@ -1,19 +1,34 @@
-package com.diagorn.sparkathon.auth.repo;
+package com.diagorn.sparkathon.auth.repo
 
-import com.diagorn.sparkathon.auth.domain.User;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.diagorn.sparkathon.auth.domain.User
+import com.diagorn.sparkathon.auth.utils.Messages
+import com.diagorn.sparkathon.common.exception.NotFoundException
+import org.springframework.data.jpa.repository.JpaRepository
 
 /**
  * Repository for working with users
  *
  * @author diagorn
  */
-public interface UserRepository extends JpaRepository<User, Long> {
+interface UserRepository: JpaRepository<User, Long> {
     /**
      * Find user by his login
      *
      * @param login - user login
      * @return user
      */
-    User findByLogin(String login);
+    fun findByLogin(login: String): User?
+
+    /**
+     * Get user by login or throw
+     *
+     * @param login - user login
+     * @return user
+     */
+    fun getByLogin(login: String): User = findByLogin(login)
+        ?: throw NotFoundException(Messages.userNotFoundByLogin(login))
+
+    override fun getById(id: Long) = findById(id).orElseThrow {
+        NotFoundException("")
+    }
 }

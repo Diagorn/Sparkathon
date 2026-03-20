@@ -1,32 +1,22 @@
-package com.diagorn.sparkathon.auth.dto.kafka;
+package com.diagorn.sparkathon.auth.dto.kafka
 
-import lombok.Builder;
-import lombok.Data;
+import java.time.LocalDateTime
 
-import java.time.LocalDateTime;
-
-/**
- * Event of user creation
- *
- * @author diagorn
- */
-@Data
-@Builder
-public class NewUserContactsEvent {
+class NewUserContactsEvent(
     /**
      * User identifier
      */
-    private Long id;
+    val id: Long,
     /**
      * User telegram nickname
      */
-    private String telegramNickname;
+    val telegramNickname: String,
     /**
      * User email
      */
-    private String email;
+    val email: String,
     /**
      * Time when user was created
      */
-    private LocalDateTime createdAt;
-}
+    val createdAt: LocalDateTime
+)

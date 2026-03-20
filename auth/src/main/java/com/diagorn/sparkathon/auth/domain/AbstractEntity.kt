@@ -1,13 +1,12 @@
-package com.diagorn.sparkathon.auth.domain;
+package com.diagorn.sparkathon.auth.domain
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import jakarta.persistence.Column
+import jakarta.persistence.EntityListeners
+import jakarta.persistence.MappedSuperclass
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
+import java.time.LocalDateTime
 
 /**
  * Abstract entity with fields every entity has
@@ -15,20 +14,23 @@ import java.time.LocalDateTime;
  * @author mikhail.gasin
  */
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
-@Getter
-@Setter
-public abstract class AbstractEntity {
+@EntityListeners(AuditingEntityListener::class)
+abstract class AbstractEntity {
     /**
      * Date of creation
      */
     @Column(name = "created_at", updatable = false, nullable = false)
     @CreatedDate
-    protected LocalDateTime createdAt;
+    var createdAt: LocalDateTime = LocalDateTime.now()
+
     /**
      * Date of last modification
      */
     @Column(name = "updated_at")
     @LastModifiedDate
-    protected LocalDateTime updatedAt;
+    var updatedAt: LocalDateTime = LocalDateTime.now()
+
+    fun update() {
+        updatedAt = LocalDateTime.now()
+    }
 }

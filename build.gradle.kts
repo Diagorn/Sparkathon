@@ -1,4 +1,8 @@
 plugins {
+    kotlin("jvm") version "1.9.22"
+    kotlin("plugin.spring") version "1.9.22"
+    kotlin("plugin.jpa") version "1.9.22"
+    kotlin("plugin.allopen") version "1.9.22"
     java
     id("io.spring.dependency-management") version "1.1.4"
     id("org.springframework.boot") version "3.2.4"
@@ -16,6 +20,36 @@ allprojects {
 subprojects {
     apply(plugin = "java")
     apply(plugin = "io.spring.dependency-management")
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "org.jetbrains.kotlin.plugin.spring")
+    apply(plugin = "org.jetbrains.kotlin.plugin.jpa")
+    apply(plugin = "org.jetbrains.kotlin.plugin.allopen")
+    apply(plugin = "io.spring.dependency-management")
+
+    // Kotlin config
+    kotlin {
+        jvmToolchain(17)
+    }
+
+    // Для Spring - все классы должны быть open
+    allOpen {
+        annotation("jakarta.persistence.Entity")
+        annotation("jakarta.persistence.MappedSuperclass")
+        annotation("jakarta.persistence.Embeddable")
+        annotation("org.springframework.stereotype.Component")
+        annotation("org.springframework.stereotype.Service")
+        annotation("org.springframework.stereotype.Repository")
+        annotation("org.springframework.stereotype.Controller")
+        annotation("org.springframework.web.bind.annotation.RestController")
+        annotation("org.springframework.context.annotation.Configuration")
+    }
+
+    // Для JPA - no-arg конструкторы
+    noArg {
+        annotation("jakarta.persistence.Entity")
+        annotation("jakarta.persistence.MappedSuperclass")
+        annotation("jakarta.persistence.Embeddable")
+    }
 
     java {
         toolchain {

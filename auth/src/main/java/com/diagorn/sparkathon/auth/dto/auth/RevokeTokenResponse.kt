@@ -1,27 +1,22 @@
-package com.diagorn.sparkathon.auth.dto.auth;
+package com.diagorn.sparkathon.auth.dto.auth
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Data;
-import lombok.ToString;
+import io.swagger.v3.oas.annotations.media.Schema
 
 /**
  * Revoke token response
  *
  * @author diagorn
  */
-@Data
-@Builder
-@ToString
-public class RevokeTokenResponse {
+class RevokeTokenResponse(
     /**
      * Is token revoked
      */
     @Schema(description = "Is token revoked", example = "true")
-    private boolean revoked;
+    val revoked: Boolean,
+
     /**
      * Comments
      */
     @Schema(description = "Comments", example = "Success")
-    private String message;
-}
+    val message: String
+)

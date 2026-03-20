@@ -1,74 +1,65 @@
-package com.diagorn.sparkathon.auth.config;
+package com.diagorn.sparkathon.auth.config
 
-import com.diagorn.sparkathon.auth.dto.kafka.NewUserContactsEvent;
-import com.diagorn.sparkathon.auth.serializer.NewUserContactsEventSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.LongSerializer;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.diagorn.sparkathon.auth.dto.kafka.NewUserContactsEvent
+import com.diagorn.sparkathon.auth.serializer.NewUserContactsEventSerializer
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.common.serialization.LongSerializer
+import org.apache.kafka.common.serialization.StringSerializer
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.kafka.core.DefaultKafkaProducerFactory
+import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.kafka.core.ProducerFactory
 
 /**
- * Configuration of Kafka producers
+ * Configuration of kafka producers
  *
  * @author diagorn
  */
 @Configuration
-public class KafkaProducerConfig {
-
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapAddress;
-
-    @Bean
-    public ProducerFactory<String, String> producerFactory() {
-        return newProducerFactory(StringSerializer.class, StringSerializer.class);
-    }
+class KafkaProducerConfig(
+    @Value("\${spring.kafka.bootstrap-servers}")
+    private val bootstrapAddress: String? = null
+) {
 
     @Bean
-    public ProducerFactory<Long, NewUserContactsEvent> newUserContactsEventProducerFactory() {
-        return newProducerFactory(LongSerializer.class, NewUserContactsEventSerializer.class);
-    }
+    fun producerFactory(): ProducerFactory<String, String> = newProducerFactory(
+            StringSerializer::class.java,
+            StringSerializer::class.java
+        )
 
     @Bean
-    public KafkaTemplate<String, String> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
-    }
+    fun newUserContactsEventProducerFactory(): ProducerFactory<Long, NewUserContactsEvent> = newProducerFactory(
+            LongSerializer::class.java,
+            NewUserContactsEventSerializer::class.java
+        )
 
     @Bean
-    public KafkaTemplate<Long, NewUserContactsEvent> newUserContactsEventKafkaTemplate() {
-        return new KafkaTemplate<>(newUserContactsEventProducerFactory());
-    }
+    fun kafkaTemplate(): KafkaTemplate<String, String> = KafkaTemplate(producerFactory())
 
     @Bean
-    public ObjectMapper objectMapper() {
-        var mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
+    fun newUserContactsEventKafkaTemplate(): KafkaTemplate<Long, NewUserContactsEvent> =
+        KafkaTemplate(newUserContactsEventProducerFactory())
+
+    @Bean
+    fun objectMapper(): ObjectMapper {
+        val mapper = ObjectMapper()
+        mapper.registerModule(JavaTimeModule())
+        return mapper
     }
 
-    private <T, K> ProducerFactory<T, K> newProducerFactory(Class<?> keySerializerClass, Class<?> valueSerializerClass) {
-        Map<String, Object> configProps = new HashMap<>();
-        configProps.put(
-                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                bootstrapAddress
-        );
-        configProps.put(
-                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-                keySerializerClass
-        );
-        configProps.put(
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-                valueSerializerClass
-        );
-        return new DefaultKafkaProducerFactory<>(configProps);
+    private fun <T, K> newProducerFactory(
+        keySerializerClass: Class<*>,
+        valueSerializerClass: Class<*>
+    ): ProducerFactory<T, K> {
+        val configProps: MutableMap<String, Any?> = HashMap()
+        configProps[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapAddress
+        configProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = keySerializerClass
+        configProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] =
+            valueSerializerClass
+        return DefaultKafkaProducerFactory(configProps)
     }
 }

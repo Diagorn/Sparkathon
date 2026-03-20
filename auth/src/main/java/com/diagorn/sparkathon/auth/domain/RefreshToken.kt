@@ -1,30 +1,25 @@
-package com.diagorn.sparkathon.auth.domain;
+package com.diagorn.sparkathon.auth.domain
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.Instant;
+import java.time.Instant
 
 /**
  * Authentication refresh token
  *
  * @author diagorn
  */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class RefreshToken {
+class RefreshToken(
     /**
      * Id of user aquired this token
      */
-    private Long userId;
+    var userId: Long,
+
     /**
      * If token is revoked
      */
-    private boolean revoked;
+    var revoked: Boolean = false,
+
     /**
      * Moment when token was created
      */
-    private Instant createdAt;
-}
+    val createdAt: Instant? = null,
+)

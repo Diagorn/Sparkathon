@@ -1,23 +1,22 @@
-package com.diagorn.sparkathon.auth.dto.user;
+package com.diagorn.sparkathon.auth.dto.user
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema
 
 /**
  * Role DTO
  *
  * @author diagorn
  */
-@Data
-public class RoleDTO {
+class RoleDto (
     /**
      * Role ID
      */
     @Schema(description = "Role ID", example = "1")
-    private Long id;
+    val id: Long,
+
     /**
      * Role name
      */
     @Schema(description = "Role name", example = "PARTICIPANT")
-    private String name;
-}
+    val name: String
+)

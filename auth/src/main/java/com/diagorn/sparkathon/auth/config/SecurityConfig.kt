@@ -1,9 +1,10 @@
-package com.diagorn.sparkathon.auth.config;
+package com.diagorn.sparkathon.auth.config
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
+
 
 /**
  * Security configuration
@@ -11,11 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * @author diagorn
  */
 @Configuration
-public class SecurityConfig {
-
+class SecurityConfig {
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
-    }
-
+    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder(10)
 }
