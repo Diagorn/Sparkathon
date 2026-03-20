@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*
  * @author diagorn
  */
 @RestController
-@RequestMapping("api/v1/auth/")
+@RequestMapping("/api/v1/auth/")
 @Tag(name = "Auth", description = "Security management API")
 class AuthController(
     private val authenticationService: AuthenticationService

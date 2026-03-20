@@ -5,7 +5,7 @@ plugins {
     kotlin("plugin.allopen") version "1.9.22"
     java
     id("io.spring.dependency-management") version "1.1.4"
-    id("org.springframework.boot") version "3.2.4"
+    id("org.springframework.boot") version "3.2.4" apply false
 }
 
 allprojects {
@@ -60,21 +60,20 @@ subprojects {
     dependencyManagement {
         imports {
             mavenBom("org.springframework.boot:spring-boot-dependencies:3.2.4")
-            mavenBom("org.springframework.cloud:spring-cloud-dependencies:2020.0.6")
+            mavenBom("org.springframework.cloud:spring-cloud-dependencies:2023.0.1")
         }
 
-        // ВАЖНО: Явно объявите версию SpringDoc для всех модулей
         dependencies {
             dependency("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
             dependency("org.mapstruct:mapstruct:1.5.5.Final")
             dependency("org.mapstruct:mapstruct-processor:1.5.5.Final")
             dependency("org.projectlombok:lombok-mapstruct-binding:0.2.0")
-
             dependency("io.jsonwebtoken:jjwt-api:0.11.5")
             dependency("io.jsonwebtoken:jjwt-impl:0.11.5")
             dependency("io.jsonwebtoken:jjwt-jackson:0.11.5")
             dependency("commons-codec:commons-codec:1.16.0")
-            dependency("org.liquibase:liquibase-core:4.4.2")
+            dependency("org.liquibase:liquibase-core:4.24.0")
+            dependency("org.postgresql:postgresql:42.7.3")
         }
     }
 
@@ -85,22 +84,11 @@ subprojects {
     }
 }
 
-// Dependency Management for all modules
-configure(subprojects) {
-    the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
-        imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.2.4")
-            mavenBom("org.springframework.cloud:spring-cloud-dependencies:2020.0.3")
-        }
-    }
-}
-
 // Common module
 project(":common") {
     dependencies {
         implementation("org.springframework.boot:spring-boot-starter")
         implementation("org.mapstruct:mapstruct")
-        implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui")
 
         annotationProcessor("org.mapstruct:mapstruct-processor")
         annotationProcessor("org.projectlombok:lombok-mapstruct-binding")
@@ -116,7 +104,11 @@ Module.SERVICES.forEach { module ->
 
         dependencies {
             implementation(project(":common"))
-            implementation("org.springframework.boot:spring-boot-starter-web")
+            if (module != Module.GATEWAY) {
+                implementation("org.springframework.boot:spring-boot-starter-web")
+                implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
+            }
+
             testImplementation("org.springframework.boot:spring-boot-starter-test")
         }
     }
